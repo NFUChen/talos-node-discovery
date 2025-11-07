@@ -17,9 +17,6 @@ import (
 )
 
 func dialTalosHosts(ips []string, batchSize int) ([]string, error) {
-	if batchSize > 100 {
-		log.Fatal("batch size cannot be greater than 100")
-	}
 	if batchSize <= 0 && batchSize != -1 {
 		log.Fatal("batch size cannot be less than or equal to 0")
 	}
