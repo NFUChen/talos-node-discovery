@@ -68,13 +68,13 @@ func main() {
 		return
 	}
 
-	var cidr, talosConfigPath, workerConfigPath, batchSize string
-	unpack.Do(os.Args[1:], &cidr, &talosConfigPath, &workerConfigPath, &batchSize)
-	log.Println("cidr:", cidr)
+	var cidrs, talosConfigPath, workerConfigPath, batchSize string
+	unpack.Do(os.Args[1:], &cidrs, &talosConfigPath, &workerConfigPath, &batchSize)
+	log.Println("cidrs:", cidrs)
 	log.Println("talosConfigPath:", talosConfigPath)
 	log.Println("workerConfigPath:", workerConfigPath)
 
-	ips, err := probe.IpsFromCIDR(cidr)
+	ips, err := probe.IpsFromCidrs(cidrs)
 	if err != nil {
 		log.Fatalf("cidr parse error: %v", err)
 	}

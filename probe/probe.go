@@ -3,24 +3,32 @@ package probe
 import (
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
 // IpsFromCIDR: returns []string of IPs (excludes network and broadcast for v4)
-func IpsFromCIDR(cidr string) ([]string, error) {
-	_, ipnet, err := net.ParseCIDR(cidr)
-	if err != nil {
-		return nil, err
+func IpsFromCidrs(cidrs string) ([]string, error) {
+	cidrsList := strings.Split(cidrs, ",")
+	var allIps []string
+	for _, cidr := range cidrsList {
+		ips := make([]string, 0)
+		_, ipnet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return nil, err
+		}
+
+		for ip := ipnet.IP.Mask(ipnet.Mask); ipnet.Contains(ip); nextIP(ip) {
+			ips = append(ips, ip.String())
+		}
+		// remove network and broadcast if IPv4 and length>2
+		if len(ips) > 2 && ipnet.IP.To4() != nil {
+			allIps = append(allIps, ips[1:len(ips)-1]...)
+		} else {
+			allIps = append(allIps, ips...)
+		}
 	}
-	var ips []string
-	for ip := ipnet.IP.Mask(ipnet.Mask); ipnet.Contains(ip); nextIP(ip) {
-		ips = append(ips, ip.String())
-	}
-	// remove network and broadcast if IPv4 and length>2
-	if len(ips) > 2 && ipnet.IP.To4() != nil {
-		return ips[1 : len(ips)-1], nil
-	}
-	return ips, nil
+	return allIps, nil
 }
 
 func nextIP(ip net.IP) {
