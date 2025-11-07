@@ -51,18 +51,24 @@ func GetMembers(ctx context.Context, talosConfigPath string, timeout time.Durati
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TALOSCONFIG=%s", talosConfigPath))
 
 	// Execute command and capture output
-	output, err := cmd.CombinedOutput()
+	// Use Output() instead of CombinedOutput() to get only stdout (JSON)
+	// This prevents stderr warnings from contaminating the JSON output
+	output, err := cmd.Output()
 	if err != nil {
 		if cmdCtx.Err() == context.DeadlineExceeded {
 			return nil, fmt.Errorf("command timed out after %v", timeout)
 		}
-		return nil, fmt.Errorf("failed to execute talosctl: %w, output: %s", err, string(output))
+		// If there's an error, try to get stderr for debugging
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("failed to execute talosctl: %w, stderr: %s", err, string(exitErr.Stderr))
+		}
+		return nil, fmt.Errorf("failed to execute talosctl: %w", err)
 	}
 
 	// Parse JSON output
 	members, err := parseMembers(output)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse members: %w", err)
+		return nil, fmt.Errorf("failed to parse members: %w, raw output: %s", err, string(output))
 	}
 
 	return members, nil
